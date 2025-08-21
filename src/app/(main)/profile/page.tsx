@@ -4,7 +4,6 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import {
   UserCircleIcon,
-  ChartBarIcon,
   CogIcon,
   PhoneIcon,
   ShieldCheckIcon,
@@ -84,7 +83,7 @@ export default function ProfilePage() {
         // 更新 session
         await update();
       }
-    } catch (error) {
+    } catch (_error) {
       setError("更新失敗，請稍後再試");
     } finally {
       setIsLoading(false);
@@ -117,7 +116,7 @@ export default function ProfilePage() {
         // 更新 session
         await update();
       }
-    } catch (error) {
+    } catch (_error) {
       setError("更新失敗，請稍後再試");
     } finally {
       setIsLoading(false);

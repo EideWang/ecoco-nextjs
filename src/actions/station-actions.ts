@@ -50,7 +50,7 @@ export const toggleFavoriteStation = async (stationId: string) => {
     revalidatePath("/profile/favorite-stations");
 
     return { success: true };
-  } catch (error) {
+  } catch (_error) {
     return {
       error: "伺服器發生錯誤，請稍後再試",
     };

@@ -1,12 +1,21 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 // import PhoneVerificationForm from "@/components/PhoneVerificationForm";
 
-const OAuthRegisterPage = () => {
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">載入中...</p>
+    </div>
+  </div>
+);
+
+const OAuthRegisterContent = () => {
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -34,14 +43,7 @@ const OAuthRegisterPage = () => {
 
   // 如果正在載入，顯示載入狀態
   if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">載入中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // 如果未登入，顯示載入狀態（useEffect 會處理跳轉）
@@ -82,8 +84,8 @@ const OAuthRegisterPage = () => {
             {provider === "google"
               ? "Google"
               : provider === "line"
-              ? "Line"
-              : "OAuth"}{" "}
+                ? "Line"
+                : "OAuth"}{" "}
             帳號註冊
           </p>
         </div>
@@ -91,6 +93,14 @@ const OAuthRegisterPage = () => {
         {/* <PhoneVerificationForm provider={provider || undefined} /> */}
       </div>
     </div>
+  );
+};
+
+const OAuthRegisterPage = () => {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <OAuthRegisterContent />
+    </Suspense>
   );
 };
 

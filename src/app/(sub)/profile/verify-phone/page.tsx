@@ -10,7 +10,7 @@ export default function VerifyPhonePage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { data: session, status, update } = useSession();
+  const { data: session, update } = useSession();
   const router = useRouter();
 
   console.log("session", session);
@@ -58,7 +58,7 @@ export default function VerifyPhonePage() {
         // 跳轉到個人資料頁面
         router.push("/profile");
       }
-    } catch (error) {
+    } catch (_error) {
       setError("綁定手機號碼時發生錯誤");
     } finally {
       setIsLoading(false);

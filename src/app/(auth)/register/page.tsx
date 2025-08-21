@@ -52,7 +52,7 @@ export default function RegisterPage() {
           router.push("/");
         }
       }
-    } catch (error) {
+    } catch (_error) {
       setError("註冊時發生錯誤");
     } finally {
       setIsLoading(false);
@@ -65,7 +65,7 @@ export default function RegisterPage() {
 
     try {
       await signIn(provider, { callbackUrl: "/profile" });
-    } catch (error) {
+    } catch (_error) {
       setError(`${provider === "google" ? "Google" : "Line"} 註冊失敗`);
       setIsLoading(false);
     }

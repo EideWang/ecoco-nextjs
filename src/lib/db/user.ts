@@ -51,7 +51,7 @@ export async function getUserById(userId: string) {
       return { success: true, user: null };
     }
 
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return { success: true, user: userWithoutPassword };
   } catch (error) {
     console.error("獲取用戶信息錯誤:", error);

@@ -1,9 +1,8 @@
-
 /* 收藏星星顏色控制 */
 .star-favorite {
-  color: #FBBF24;
-  stroke: #FBBF24 !important;
-  fill: #FBBF24 !important;
+  color: #fbbf24;
+  stroke: #fbbf24 !important;
+  fill: #fbbf24 !important;
 }
 .star-outline {
   color: #aaaaaa;

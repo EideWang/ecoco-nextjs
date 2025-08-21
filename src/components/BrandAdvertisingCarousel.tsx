@@ -5,6 +5,8 @@ import "react-multi-carousel/lib/styles.css";
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
 
+import Image from "next/image";
+
 // 直接 import 圖片
 import carousel01 from "@/assets/home-images/carousel-01.webp";
 import carousel02 from "@/assets/home-images/carousel-02.webp";
@@ -63,18 +65,19 @@ const carouselItems = images.map((image, index) => {
         aspectRatio: "16 / 9",
         px: 0,
         overflow: "hidden",
+        position: "relative",
       }}
     >
-      <img
-        src={image.src.src}
+      <Image
+        src={image.src}
         alt={`Carousel image ${index + 1}`}
+        fill
         style={{
-          width: "100%",
-          height: "100%",
           objectFit: "cover",
           objectPosition: "center",
           borderRadius: "16px",
         }}
+        priority={index === 0}
       />
     </Box>
   );
@@ -102,11 +105,10 @@ const responsive = {
 // Custom dot component
 const CustomDot = ({ ...rest }) => {
   const {
-    onMove,
     onClick,
     index,
     active,
-    carouselState: { currentSlide, deviceType },
+    carouselState: { _currentSlide, _deviceType },
   } = rest;
 
   // onMove means if dragging or swiping in progress.
@@ -149,7 +151,7 @@ export default function BrandAdvertisingCarousel() {
   useEffect(() => {
     const imagePromises = images.map(image => {
       return new Promise((resolve, reject) => {
-        const img = new Image();
+        const img = new window.Image();
         img.src = image.src.src;
         img.onload = resolve;
         img.onerror = reject;

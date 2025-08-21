@@ -1,5 +1,5 @@
 import { Coupon } from "@/types/coupon";
-import { Box, Typography, Paper, Button, Card } from "@mui/material";
+import { Box, Typography, Card } from "@mui/material";
 import Image from "next/image";
 
 interface CouponCardProps {
@@ -17,9 +17,8 @@ export default function CouponCard({ coupon }: CouponCardProps) {
     // Navigate to coupon details page (to be implemented)
     console.log("Coupon clicked:", coupon.id);
   };
-
-  const { text: statusText, color: statusColor } =
-    statusMap[coupon.status] || statusMap.expired;
+  //這行似乎怪怪的
+  const { text: statusText } = statusMap[coupon.status] || statusMap.expired;
 
   return (
     <Card

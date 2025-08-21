@@ -4,7 +4,7 @@ import Line from "next-auth/providers/line";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db/prisma";
-import { compare, hash } from "bcryptjs";
+import { compare } from "bcryptjs";
 import { getUserByPhoneWithPassword } from "@/lib/db/user";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -160,6 +160,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     // Sign in callback - 處理 OAuth 註冊
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async signIn({ user, account, profile }) {
       // 如果是 OAuth 登入，檢查用戶狀態
       // if (account?.provider === "google" || account?.provider === "line") {

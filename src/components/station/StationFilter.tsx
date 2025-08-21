@@ -1,26 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
-import SearchIcon from "@mui/icons-material/Search";
 import MapIcon from "@mui/icons-material/Map";
-import StarIcon from "@mui/icons-material/Star";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import InputAdornment from "@mui/material/InputAdornment";
-import {
-  ToggleButton,
-  ToggleButtonGroup,
-  IconButton,
-  Button,
-  AppBar,
-} from "@mui/material";
+import { IconButton, AppBar } from "@mui/material";
 import Link from "next/link";
-import Grid from "@mui/material/Grid";
 
 export type StationFilterProps = {
   cityOptions: string[];
@@ -48,21 +34,17 @@ const StationFilter: React.FC<StationFilterProps> = ({
   districtMap,
   onFilterChange,
 }) => {
-  const router = useRouter();
+  // const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState(keyword);
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [specialFilter, setSpecialFilter] = useState<string[]>([]);
 
   const districtOptions = selectedCity ? districtMap[selectedCity] || [] : [];
-
-  const handleSpecialFilterChange = (filter: string) => {
-    setSpecialFilter(prev =>
-      prev.includes(filter) ? prev.filter(f => f !== filter) : [...prev, filter]
-    );
-  };
 
   useEffect(() => {
     const handler = setTimeout(() => {

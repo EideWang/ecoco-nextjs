@@ -11,4 +11,4 @@ const IconContainer = ({ children, className = "" }: IconContainerProps) => (
   </div>
 );
 
-export default IconContainer; 
+export default IconContainer;

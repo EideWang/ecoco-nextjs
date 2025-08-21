@@ -19,4 +19,3 @@ export const getStations = async () => {
     return [];
   }
 };
-

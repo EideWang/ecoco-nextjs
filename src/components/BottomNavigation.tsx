@@ -51,12 +51,12 @@ export default function BottomNavigationBar() {
   const router = useRouter();
   const [value, setValue] = useState(getNavIndexByPath(pathname));
 
-  // 僅在 allowedRoutes 才顯示 BottomNavigation
-  if (!allowedRoutes.includes(pathname)) return null;
-
   useEffect(() => {
     setValue(getNavIndexByPath(pathname));
   }, [pathname]);
+
+  // 僅在 allowedRoutes 才顯示 BottomNavigation
+  if (!allowedRoutes.includes(pathname)) return null;
 
   return (
     <Box

@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
       // TODO: 實作簡訊驗證碼發送功能
       // 這裡需要整合簡訊服務商的 API
       setMessage("驗證碼已發送到您的手機，請查收簡訊");
-    } catch (error) {
+    } catch (_error) {
       setError("發送驗證碼失敗，請稍後再試");
     } finally {
       setIsLoading(false);
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
               className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="請輸入手機號碼"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
+              onChange={e => setPhoneNumber(e.target.value)}
             />
           </div>
 

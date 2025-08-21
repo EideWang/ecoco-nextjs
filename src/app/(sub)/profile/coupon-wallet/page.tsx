@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Tab, Tabs, Container, Typography, AppBar } from "@mui/material";
+import { Box, Tab, Tabs, Typography, AppBar } from "@mui/material";
 import CouponList from "@/components/coupon/CouponList";
 import { mockCoupons } from "@/_data/coupons";
 

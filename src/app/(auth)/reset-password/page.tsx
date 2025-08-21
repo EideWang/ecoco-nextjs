@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function ResetPasswordPage() {
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+      <p className="mt-4 text-gray-600">載入中...</p>
+    </div>
+  </div>
+);
+
+const ResetPasswordContent = () => {
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,7 +50,7 @@ export default function ResetPasswordPage() {
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (error) {
+    } catch (_error) {
       setError("密碼重置失敗，請稍後再試");
     } finally {
       setIsLoading(false);
@@ -95,7 +104,7 @@ export default function ResetPasswordPage() {
               className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 text-center text-lg tracking-widest"
               placeholder="000000"
               value={verificationCode}
-              onChange={(e) =>
+              onChange={e =>
                 setVerificationCode(e.target.value.replace(/\D/g, ""))
               }
             />
@@ -116,7 +125,7 @@ export default function ResetPasswordPage() {
               className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="請輸入新密碼（至少6個字元）"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+              onChange={e => setNewPassword(e.target.value)}
             />
           </div>
 
@@ -135,7 +144,7 @@ export default function ResetPasswordPage() {
               className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="請再次輸入新密碼"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={e => setConfirmPassword(e.target.value)}
             />
           </div>
 
@@ -183,5 +192,13 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+};
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

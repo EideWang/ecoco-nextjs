@@ -7,6 +7,9 @@ import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 
+const SCROLL_SENSITIVE_ROUTES = ["/", "/profile"]; // [設定] 哪些頁面需要滾動觸發陰影
+const ELEVATED_ROUTES = ["/stations", "/partners"]; // [設定] 哪些頁面需要固定陰影
+
 export type MainAppBarProps = {
   showLogo?: boolean;
   showNotification?: boolean;
@@ -19,8 +22,6 @@ const MainAppBar: React.FC<MainAppBarProps> = ({
   rightContent,
 }) => {
   const pathname = usePathname();
-  const scrollSensitiveRoutes = ["/", "/profile"]; //[設定]哪些頁面需要滾動觸發陰影
-  const elevatedRoutes = ["/stations", "/partners"]; //[設定]哪些頁面需要固定陰影
   const [elevation, setElevation] = useState(0);
   const lastElevationRef = useRef(0);
 
@@ -45,14 +46,14 @@ const MainAppBar: React.FC<MainAppBarProps> = ({
       }
     };
 
-    if (elevatedRoutes.includes(pathname)) {
+    if (ELEVATED_ROUTES.includes(pathname)) {
       // 不註冊滾動事件
       setElevation(basicElevation);
       lastElevationRef.current = basicElevation;
       return;
     }
 
-    if (scrollSensitiveRoutes.includes(pathname) && scrollContainer) {
+    if (SCROLL_SENSITIVE_ROUTES.includes(pathname) && scrollContainer) {
       setElevation(0);
       lastElevationRef.current = 0;
       // 註冊滾動事件監聽器

@@ -61,7 +61,7 @@ export async function registerWithPhone(
 
     revalidatePath("/");
     revalidatePath("/profile");
-    const { password: _, ...userWithoutPassword } = newUser;
+    const { password: _password, ...userWithoutPassword } = newUser;
     return { success: true, user: userWithoutPassword };
   } catch (error) {
     console.error("註冊錯誤:", error);

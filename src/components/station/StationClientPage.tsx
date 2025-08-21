@@ -1,20 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Container,
-  Stack,
-  Typography,
-  Box,
-  Snackbar,
-  Alert,
-} from "@mui/material";
+import { Container, Typography, Box, Snackbar, Alert } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import StationCard from "@/components/station/StationCard";
-import { Station } from "@/types/station";
+import { Station, PlasticType } from "@/types/station";
 import StationFilter from "@/components/station/StationFilter";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { calculateStationDistance } from "@/lib/utils/calculateStationDistance";
+
+const plasticTypes: PlasticType[] = ["PET", "HDPE", "PP"];
+
+function isPlasticType(category: string): category is PlasticType {
+  return plasticTypes.includes(category as PlasticType);
+}
 
 interface StationClientPageProps {
   initialStations: Station[];
@@ -81,12 +80,6 @@ export default function StationClientPage({
     }
   }, [locationError]);
 
-  const handleToggleFavorite = (id: string) => {
-    setStationList(prev =>
-      prev.map(s => (s.id === id ? { ...s, isFavorite: !s.isFavorite } : s))
-    );
-  };
-
   const handleFilterChange = (newFilter: typeof filter) => {
     setFilter(newFilter);
   };
@@ -116,11 +109,11 @@ export default function StationClientPage({
         (!s.items.battery || !s.items.battery.enabled)
       )
         return false;
-      if (["PET", "HDPE", "PP"].includes(filter.category)) {
+      if (isPlasticType(filter.category)) {
         if (
           !s.items.plastics ||
           !s.items.plastics.enabled ||
-          !s.items.plastics.types.includes(filter.category as any)
+          !s.items.plastics.types.includes(filter.category)
         )
           return false;
       }

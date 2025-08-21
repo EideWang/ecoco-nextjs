@@ -11,6 +11,8 @@ export type CampaignTag = {
   shortDescription: string;
 };
 
+export type PlasticType = "PET" | "HDPE" | "PP";
+
 export type Station = {
   id: string;
   name: string;
@@ -23,7 +25,7 @@ export type Station = {
   items: {
     plastics?: {
       enabled: boolean;
-      types: Array<"PET" | "HDPE" | "PP">;
+      types: PlasticType[];
       remaining: number;
     };
     alu?: {
@@ -40,4 +42,4 @@ export type Station = {
   campaignTags: CampaignTag[];
   distance?: number;
   isFavorite: boolean;
-}; 
+};

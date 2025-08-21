@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
       } else {
         router.push("/profile");
       }
-    } catch (error) {
+    } catch (_error) {
       setError("登入時發生錯誤");
     } finally {
       setIsLoading(false);
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
     try {
       await signIn(provider, { callbackUrl: "/" });
-    } catch (error) {
+    } catch (_error) {
       setError(`${provider === "google" ? "Google" : "Line"} 登入失敗`);
       setIsLoading(false);
     }

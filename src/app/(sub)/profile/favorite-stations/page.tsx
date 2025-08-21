@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
-import { Box, Grid, Typography, Container } from "@mui/material";
+import { Box, Typography, Container } from "@mui/material";
 
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db/prisma";
