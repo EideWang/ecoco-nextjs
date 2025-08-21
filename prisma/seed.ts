@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, User } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import bcrypt from "bcryptjs";
 import { networkInterfaces } from "node:os";
@@ -85,8 +85,10 @@ async function main() {
   });
 
   // Create corresponding accounts for OAuth users
-  const googleUser = users.find(u => u.email === "google.user@example.com");
-  const lineUser = users.find(u => u.email === "line.user@example.com");
+  const googleUser = users.find(
+    (u: User) => u.email === "google.user@example.com"
+  );
+  const lineUser = users.find((u: User) => u.email === "line.user@example.com");
 
   if (googleUser) {
     await prisma.account.create({
@@ -472,7 +474,7 @@ async function main() {
 
   // --- Make some users favorite some stations ---
   console.log("Creating favorite stations for users...");
-  for (const user of users.slice(0, 5)) {
+  for (const user of users.slice(0, 5) as User[]) {
     for (const station of stations.slice(0, 3)) {
       if (faker.datatype.boolean()) {
         await prisma.userFavoriteStation.create({
