@@ -1,7 +1,6 @@
 import { PrismaClient, User } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import bcrypt from "bcryptjs";
-import { networkInterfaces } from "node:os";
 
 const prisma = new PrismaClient();
 
