@@ -1,0 +1,336 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  name                String?
+  avatarId            String? // 新增：當前正在使用的 Avatar 的 ID (可選，用戶可能未設定)
+  avatar              Avatar?   @relation("CurrentAvatar", fields: [avatarId], references: [id]) // 連結到 Avatar 模型
+  email               String?   @unique
+  emailVerified       DateTime?
+  image               String?
+  phoneNumber         String?   @unique // 新增: 手機門號，必須是唯一的
+  phoneNumberVerified DateTime? // 新增: 手機門號驗證時間戳
+  password            String? // 新增：用於傳統 Email/Password 登入
+  city                String? //縣市
+  district            String? //鄉鎮
+  gender              String? // 性別 (可選，例如 'Male', 'Female', 'Prefer not to say')
+  dateOfBirth         DateTime? //生日，可NULL表示不願透露
+
+  currentEcocoPoints    Int             @default(0) //Ecoco點數
+  currentEcocoCoins     Int             @default(0) //Ecoco幣
+  totalPETCount         Int             @default(0) //PET瓶數
+  totalHDPECount        Int             @default(0) //HDPE瓶數
+  totalPPCount          Int             @default(0) //PP瓶數  
+  totalAluminumCanCount Int             @default(0) //鋁罐數
+  totalBatteryCount     Int             @default(0) //電池數
+  lastRecycleAt         DateTime? // 最後一次投遞時間
+  lastLoginAt           DateTime? // 記錄最後一次登入時間
+  accounts              Account[]
+  sessions              Session[]
+  // Optional for WebAuthn support
+  Authenticator         Authenticator[]
+
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  UserOwnedAvatar  UserOwnedAvatar[]
+  favoriteStations UserFavoriteStation[]
+  UserCoupon       UserCoupon[]
+  RedemptionLog    RedemptionLog[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+}
+
+model Avatar {
+  id         String   @id @default(cuid())
+  name       String   @unique // 頭像名稱
+  imageUrl   String // 頭像圖片 URL (這是你提供的數位頭像圖片路徑)
+  pointsCost Int // 兌換所需點數
+  isDefault  Boolean  @default(false) // 是否為預設頭像 (例如，新用戶註冊時自動設定)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // 關係：多個用戶可以設定同一個頭像作為當前頭像
+  usersUsingIt User[] @relation("CurrentAvatar")
+
+  // 關係：多個用戶可以擁有這個頭像
+  ownedByUsers UserOwnedAvatar[]
+}
+
+// 【新增】使用者擁有的數位頭像中間表 (多對多關係)
+model UserOwnedAvatar {
+  userId     String
+  avatarId   String
+  acquiredAt DateTime @default(now()) // 獲得/兌換時間
+
+  user   User   @relation(fields: [userId], references: [id])
+  avatar Avatar @relation(fields: [avatarId], references: [id])
+
+  @@id([userId, avatarId]) // 複合主鍵，確保一個用戶不能重複擁有同一個頭像
+  @@index([userId])
+  @@index([avatarId])
+}
+
+// ==============================================================================
+// Station Related Models
+// ==============================================================================
+
+// 可回收物類型
+enum ItemType {
+  PLASTICS
+  ALU
+  BATTERY
+}
+
+// 站點資料表
+model Station {
+  id        String   @id // e.g. "es0001"
+  name      String
+  address   String
+  city      String
+  district  String
+  lat       Float
+  lng       Float
+  openHours String
+  isOpen    Boolean  @default(true)
+  showOnWeb Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 關聯
+  recyclableItems RecyclableItem[]
+  favoritedBy     UserFavoriteStation[] // 收藏此站點的使用者
+  campaigns       StationCampaign[] // 此站點的活動
+}
+
+// 站點可回收項目表
+model RecyclableItem {
+  id           String   @id @default(cuid())
+  stationId    String
+  station      Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  itemType     ItemType // e.g., PLASTICS, ALU, BATTERY
+  enabled      Boolean
+  remaining    Int
+  plasticTypes String[] // 僅適用於 PLASTICS 類型
+
+  @@index([stationId])
+}
+
+// 活動表
+model Campaign {
+  id               String   @id // e.g., "promo_double_points_aug"
+  name             String
+  type             String // e.g., "POINTS_BONUS", "EVENT"
+  priority         Int
+  icon             String
+  color            String
+  textColor        String
+  startDate        DateTime
+  endDate          DateTime
+  shortDescription String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // 關聯
+  stations StationCampaign[] // 參與此活動的站點
+}
+
+// 站點與活動的關聯表 (多對多)
+model StationCampaign {
+  stationId  String
+  campaignId String
+  station    Station  @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@id([stationId, campaignId])
+  @@index([stationId])
+  @@index([campaignId])
+}
+
+// 使用者收藏站點的關聯表 (多對多)
+model UserFavoriteStation {
+  userId    String
+  stationId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  station Station @relation(fields: [stationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, stationId])
+  @@index([userId])
+  @@index([stationId])
+}
+
+// ==============================================================================
+// Partner & Coupon Related Models
+// ==============================================================================
+
+// 優惠券的兌換/核銷類型
+enum CouponRedemptionType {
+  VERIFICATION_CODE // 電子核銷碼 (當下核銷)
+  TIMED_QR_CODE // 效期 QR Code (當下核銷)
+  SERIAL_NUMBER // 電子序號 (先領後用)
+  BARCODE // 條碼 (先領後用)
+}
+
+// 使用者持有票券的狀態
+enum UserCouponStatus {
+  UNUSED // 未使用
+  USED // 已使用
+  EXPIRED // 已過期
+}
+
+// 合作商家
+model Partner {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  logoUrl     String?
+  websiteUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 關聯: 一個商家可以提供多種優惠券
+  coupons Coupon[]
+}
+
+// 優惠券模板
+model Coupon {
+  id                 String               @id @default(cuid())
+  partnerId          String
+  partner            Partner              @relation(fields: [partnerId], references: [id])
+  title              String
+  description        String
+  imageUrl           String
+  isActive           Boolean              @default(true) // 手動開關，應對突發狀況
+  pointsCost         Int? // 兌換所需點數
+  coinsCost          Int? // 兌換所需金幣
+  redemptionType     CouponRedemptionType // 核銷類型
+  totalQuantity      Int // 總發行量
+  redeemedQuantity   Int                  @default(0) // 已兌換數量
+  startDate          DateTime // 兌換開始時間
+  endDate            DateTime // 兌換結束時間
+  validityDays       Int? // 領取後有效天數 (與 fixedExpiresAt 二選一)
+  fixedExpiresAt     DateTime? // 固定的到期日 (優先權高於 validityDays)
+  termsAndConditions String? // 使用條款
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  // 關聯
+  userCoupons    UserCoupon[]
+  redemptionLogs RedemptionLog[]
+  couponCodes    CouponCode[] // 關聯到序號池
+
+  @@index([partnerId])
+}
+
+// 使用者票券匣中的票券 (適用於先領後用的類型)
+model UserCoupon {
+  id           String           @id @default(cuid())
+  userId       String
+  couponId     String
+  user         User             @relation(fields: [userId], references: [id])
+  coupon       Coupon           @relation(fields: [couponId], references: [id])
+  status       UserCouponStatus @default(UNUSED)
+  serialNumber String? // 如果是序號/條碼類型，這裡會存放從 CouponCode 分配來的序號
+  acquiredAt   DateTime         @default(now()) // 領取時間
+  expiresAt    DateTime? // 過期時間
+  redeemedAt   DateTime? // 核銷時間
+
+  // 關聯
+  couponCode CouponCode? // 關聯回原始的 CouponCode
+
+  @@unique([userId, couponId, serialNumber]) // 同一個使用者對同一個優惠券，序號不能重複 (防止異常)
+  @@index([userId])
+  @@index([couponId])
+}
+
+// 合作夥伴提供的序號池 (適用於 SERIAL_NUMBER 和 BARCODE 類型)
+model CouponCode {
+  id           String      @id @default(cuid())
+  couponId     String
+  coupon       Coupon      @relation(fields: [couponId], references: [id])
+  code         String // 合作夥伴提供的序號
+  isAssigned   Boolean     @default(false) // 是否已被分配給使用者
+  userCouponId String?     @unique // 分配給了哪個 UserCoupon
+  userCoupon   UserCoupon? @relation(fields: [userCouponId], references: [id])
+
+  @@unique([couponId, code]) // 同一個優惠券下的序號必須是唯一的
+  @@index([couponId, isAssigned]) // 加速尋找未分配的序號
+}
+
+// 核銷紀錄 (所有類型的成功核銷都會記錄於此)
+model RedemptionLog {
+  id              String   @id @default(cuid())
+  userId          String
+  couponId        String
+  user            User     @relation(fields: [userId], references: [id])
+  coupon          Coupon   @relation(fields: [couponId], references: [id])
+  redeemedAt      DateTime @default(now())
+  storeIdentifier String? // 用於記錄是哪個分店核銷的 (例如分店代號)
+  partnerId       String // 冗餘存儲，方便查詢
+
+  @@index([userId])
+  @@index([couponId])
+  @@index([partnerId])
+}
