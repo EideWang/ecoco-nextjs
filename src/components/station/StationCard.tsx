@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React from "react";
 import {
   Card,
   Box,
@@ -13,7 +13,6 @@ import Image from "next/image";
 import StarOutlineIcon from "@mui/icons-material/StarBorderOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import { isStationOpenNow } from "@/lib/utils/isStationOpenNow";
-import { toggleFavoriteStation } from "@/actions/station-actions";
 
 export type StationCardProps = {
   id: string;
@@ -33,6 +32,8 @@ export type StationCardProps = {
     alu?: { enabled: boolean; remaining: number };
     battery?: { enabled: boolean; remaining: number };
   };
+  onToggleFavorite: (stationId: string) => void;
+  isPending: boolean;
 };
 
 const getItemStatus = (item?: { enabled: boolean; remaining: number }) => {
@@ -65,15 +66,11 @@ const StationCard: React.FC<StationCardProps> = ({
   distance,
   openHours,
   items,
+  onToggleFavorite,
+  isPending,
 }) => {
-  const [isPending, startTransition] = useTransition();
-  const [optimisticFavorite, setOptimisticFavorite] = useState(isFavorite);
-
   const handleToggleFavorite = () => {
-    startTransition(() => {
-      setOptimisticFavorite(prev => !prev);
-      toggleFavoriteStation(id);
-    });
+    onToggleFavorite(id);
   };
 
   const handleNavigate = () => openGoogleMaps(lat, lng, name);
@@ -119,15 +116,23 @@ const StationCard: React.FC<StationCardProps> = ({
           <IconButton
             sx={{
               p: 0.5,
+              // 覆寫 disabled 狀態的樣式
+              "&.Mui-disabled": {
+                color: theme =>
+                  isFavorite
+                    ? theme.palette.warning.main
+                    : theme.palette.action.active,
+                opacity: 1,
+              },
             }}
-            aria-label={optimisticFavorite ? "移除收藏" : "加入收藏"}
+            aria-label={isFavorite ? "移除收藏" : "加入收藏"}
             onClick={handleToggleFavorite}
             onKeyDown={handleFavoriteKeyDown}
             disabled={isPending}
-            color={optimisticFavorite ? "warning" : "default"}
+            color={isFavorite ? "warning" : "default"}
             size="large"
           >
-            {optimisticFavorite ? <StarIcon /> : <StarOutlineIcon />}
+            {isFavorite ? <StarIcon /> : <StarOutlineIcon />}
           </IconButton>
         </Stack>
         {/* 地址、距離與導航 */}

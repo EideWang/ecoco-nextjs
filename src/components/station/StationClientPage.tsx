@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useTransition,
+  useOptimistic,
+  useMemo,
+} from "react";
 import { Container, Typography, Box, Snackbar, Alert } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import StationCard from "@/components/station/StationCard";
@@ -8,6 +15,7 @@ import { Station, PlasticType } from "@/types/station";
 import StationFilter from "@/components/station/StationFilter";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { calculateStationDistance } from "@/lib/utils/calculateStationDistance";
+import { toggleFavoriteStation } from "@/actions/station-actions";
 
 const plasticTypes: PlasticType[] = ["PET", "HDPE", "PP"];
 
@@ -17,19 +25,21 @@ function isPlasticType(category: string): category is PlasticType {
 
 interface StationClientPageProps {
   initialStations: Station[];
+  initialFavoriteIds: string[];
 }
 
-// 這是純粹的客戶端組件，負責 UI 互動
 export default function StationClientPage({
   initialStations,
+  initialFavoriteIds,
 }: StationClientPageProps) {
   const {
     location,
     loading: locationLoading,
     error: locationError,
   } = useUserLocation();
+  const [isTransitioning, startTransition] = useTransition();
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
-  // 產生 cityOptions 與 districtMap
   const cityOptions = Array.from(new Set(initialStations.map(s => s.city)));
   const districtMap = cityOptions.reduce(
     (acc, city) => {
@@ -49,11 +59,12 @@ export default function StationClientPage({
     district: "",
     category: "",
   });
-  const [stationList, setStationList] = useState<Station[]>(initialStations);
-  const [isSorted, setIsSorted] = useState(false);
   const [showLocationError, setShowLocationError] = useState(false);
 
-  useEffect(() => {
+  // --- 狀態管理分層 ---
+
+  // 1. 站點狀態：距離計算
+  const sortedStations = useMemo(() => {
     if (location) {
       const stationsWithDistance = initialStations.map(station => ({
         ...station,
@@ -67,16 +78,45 @@ export default function StationClientPage({
       stationsWithDistance.sort(
         (a, b) => (a.distance ?? 0) - (b.distance ?? 0)
       );
-      setStationList(stationsWithDistance);
-      setIsSorted(true);
+      return stationsWithDistance;
     }
-  }, [location, initialStations]);
+    return initialStations;
+  }, [initialStations, location]);
+
+  // 2. 個人收藏狀態
+  const [favoriteIdSet, setFavoriteIdSet] = useState(
+    () => new Set(initialFavoriteIds)
+  );
+
+  const [optimisticFavoriteSet, setOptimisticFavorite] = useOptimistic(
+    favoriteIdSet,
+    (currentSet, stationId: string) => {
+      const newSet = new Set(currentSet);
+      if (newSet.has(stationId)) {
+        newSet.delete(stationId);
+      } else {
+        newSet.add(stationId);
+      }
+      return newSet;
+    }
+  );
+
+  // 當 revalidate 導致 initialFavoriteIds prop 變化時，同步本地 Set
+  useEffect(() => {
+    setFavoriteIdSet(new Set(initialFavoriteIds));
+  }, [initialFavoriteIds]);
+
+  // 当 transition 结束后，清除 pendingId
+  useEffect(() => {
+    if (!isTransitioning) {
+      setPendingId(null);
+    }
+  }, [isTransitioning]);
 
   useEffect(() => {
     if (locationError) {
+      //可考慮插一個紀錄使用者拒絕授權的比例
       setShowLocationError(true);
-      // 在實務上，可能會想在這裡使用一個提示或日誌服務，記錄用戶沒開位置授權的比例
-      console.warn("無法取得位置:", locationError.message);
     }
   }, [locationError]);
 
@@ -84,20 +124,26 @@ export default function StationClientPage({
     setFilter(newFilter);
   };
 
+  const handleToggleFavorite = async (stationId: string) => {
+    setPendingId(stationId);
+    startTransition(() => {
+      setOptimisticFavorite(stationId);
+      toggleFavoriteStation(stationId);
+    });
+  };
+
   const handleCloseLocationError = (
     event?: React.SyntheticEvent | Event,
     reason?: string
   ) => {
-    if (reason === "clickaway") {
-      return;
-    }
+    if (reason === "clickaway") return;
     setShowLocationError(false);
   };
 
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const filteredStations = stationList.filter(s => {
-    // 關鍵字比對站名
+  // 3. render組合層
+  const filteredStations = sortedStations.filter(s => {
     if (filter.keyword && !s.name.includes(filter.keyword)) return false;
     if (filter.city && s.city !== filter.city) return false;
     if (filter.district && s.district !== filter.district) return false;
@@ -124,9 +170,9 @@ export default function StationClientPage({
   const rowVirtualizer = useVirtualizer({
     count: filteredStations.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 190, // 提供一個接近平均卡片高度的合理估計值
-    overscan: 5, // 在可見範圍外預先渲染 5 個項目
-    gap: 0, // 間距由組件內的 padding 手動控制
+    estimateSize: () => 190,
+    overscan: 5,
+    gap: 0,
   });
 
   return (
@@ -136,14 +182,10 @@ export default function StationClientPage({
         districtMap={districtMap}
         onFilterChange={handleFilterChange}
       />
-
       <Box
         ref={parentRef}
         sx={{
-          height: {
-            xs: "calc(100vh - 164px)", // 手機版高度
-            sm: "calc(100vh - 172px)", // 平板與桌面版高度
-          },
+          height: { xs: "calc(100vh - 164px)", sm: "calc(100vh - 172px)" },
           overflow: "auto",
         }}
       >
@@ -153,13 +195,15 @@ export default function StationClientPage({
             position: "relative",
           }}
         >
-          {locationLoading || (location && !isSorted) ? (
-            <Typography variant="body2" sx={{ textAlign: "center", my: 2 }}>
-              正在取得您的位置以排序站點...
-            </Typography>
+          {locationLoading ? (
+            <Typography>...</Typography>
           ) : (
             rowVirtualizer.getVirtualItems().map(virtualItem => {
               const station = filteredStations[virtualItem.index];
+              if (!station) return null;
+
+              const isFavorite = optimisticFavoriteSet.has(station.id);
+
               return (
                 <div
                   key={virtualItem.key}
@@ -174,7 +218,12 @@ export default function StationClientPage({
                   data-index={virtualItem.index}
                 >
                   <Box sx={{ px: { xs: 2, sm: 4, md: 8 }, pb: 1.5 }}>
-                    <StationCard {...station} />
+                    <StationCard
+                      {...station}
+                      isFavorite={isFavorite}
+                      onToggleFavorite={handleToggleFavorite}
+                      isPending={pendingId === station.id}
+                    />
                   </Box>
                 </div>
               );

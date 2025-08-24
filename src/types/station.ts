@@ -1,27 +1,10 @@
-export type CampaignTag = {
-  id: string;
-  name: string;
-  type: string;
-  priority: number;
-  icon: string;
-  color: string;
-  textColor: string;
-  startDate: string;
-  endDate: string;
-  shortDescription: string;
-};
+import { Station as PrismaStation, RecyclableItem } from "@prisma/client";
 
-export type PlasticType = "PET" | "HDPE" | "PP";
+// 从 Prisma 生成的类型中排除我们不需要或将要覆盖的字段
+type PrismaStationOmit = Omit<PrismaStation, "createdAt" | "updatedAt">;
 
-export type Station = {
-  id: string;
-  name: string;
-  address: string;
-  city: string;
-  district: string;
-  lat: number;
-  lng: number;
-  openHours: string;
+// 客户端使用的基础 Station 类型，不再包含 isFavorite
+export interface Station extends PrismaStationOmit {
   items: {
     plastics?: {
       enabled: boolean;
@@ -37,9 +20,21 @@ export type Station = {
       remaining: number;
     };
   };
-  isOpen: boolean;
-  showOnWeb: boolean;
-  campaignTags: CampaignTag[];
-  distance?: number;
-  isFavorite: boolean;
+  // isFavorite: boolean; // 已移除
+  recyclableItems: RecyclableItem[];
+}
+
+export type PlasticType = "PET" | "HDPE" | "PP";
+
+export type CampaignTag = {
+  id: string;
+  name: string;
+  type: string;
+  priority: number;
+  icon: string;
+  color: string;
+  textColor: string;
+  startDate: string;
+  endDate: string;
+  shortDescription: string;
 };
